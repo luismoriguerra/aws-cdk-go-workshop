@@ -20,12 +20,11 @@ func NewCdkWorkshopStack(scope constructs.Construct, id string, props *CdkWorksh
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-
-	queue := awssqs.NewQueue(stack, jsii.String("CdkWorkshopQueue"), &awssqs.QueueProps{
+	queue := awssqs.NewQueue(stack, jsii.String("lggoCdkWorkshopQueue"), &awssqs.QueueProps{
 		VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
 	})
 
-	topic := awssns.NewTopic(stack, jsii.String("CdkWorkshopTopic"), &awssns.TopicProps{})
+	topic := awssns.NewTopic(stack, jsii.String("lggoCdkWorkshopTopic"), &awssns.TopicProps{})
 	topic.AddSubscription(awssnssubscriptions.NewSqsSubscription(queue, &awssnssubscriptions.SqsSubscriptionProps{}))
 
 	return stack
@@ -36,7 +35,7 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	NewCdkWorkshopStack(app, "CdkWorkshopStack", &CdkWorkshopStackProps{
+	NewCdkWorkshopStack(app, "LgGolangCdkWorkshopStack", &CdkWorkshopStackProps{
 		awscdk.StackProps{
 			Env: env(),
 		},
