@@ -1,14 +1,12 @@
 package main
 
 import (
-	"cdk-workshop/hitcounter"
-
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsecs"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsecspatterns"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
-	"github.com/cdklabs/cdk-dynamo-table-viewer-go/dynamotableviewer"
 )
 
 type CdkWorkshopStackProps struct {
@@ -22,25 +20,39 @@ func NewCdkWorkshopStack(scope constructs.Construct, id string, props *CdkWorksh
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	helloHandler := awslambda.NewFunction(stack, jsii.String("lggoHelloHandler"), &awslambda.FunctionProps{
-		Code:    awslambda.Code_FromAsset(jsii.String("lambda"), nil),
-		Runtime: awslambda.Runtime_NODEJS_16_X(),
-		Handler: jsii.String("hello.handler"),
+	vpc := awsec2.NewVpc(stack, jsii.String("lggoCdkWorkshopVpc"), &awsec2.VpcProps{
+		MaxAzs: jsii.Number(2),
+	})
+	cluster := awsecs.NewCluster(stack, jsii.String("lggoCdkWorkshopCluster"), &awsecs.ClusterProps{
+		Vpc: vpc,
 	})
 
-	hitcounter := hitcounter.NewHitCounter(stack, "lggocdkHelloHitCounter", &hitcounter.HitCounterProps{
-		Downstream: helloHandler,
+	awsecspatterns.NewApplicationLoadBalancedFargateService(stack, jsii.String("lggoCdkWorkshopFargateService"), &awsecspatterns.ApplicationLoadBalancedFargateServiceProps{
+		Cluster: cluster,
+		TaskImageOptions: &awsecspatterns.ApplicationLoadBalancedTaskImageOptions{
+			Image: awsecs.ContainerImage_FromRegistry(jsii.String("amazon/amazon-ecs-sample"), nil),
+		},
 	})
 
-	awsapigateway.NewLambdaRestApi(stack, jsii.String("lggocdkEndpoint"), &awsapigateway.LambdaRestApiProps{
-		// Handler: helloHandler,
-		Handler: hitcounter.Handler(),
-	})
+	// helloHandler := awslambda.NewFunction(stack, jsii.String("lggoHelloHandler"), &awslambda.FunctionProps{
+	// 	Code:    awslambda.Code_FromAsset(jsii.String("lambda"), nil),
+	// 	Runtime: awslambda.Runtime_NODEJS_16_X(),
+	// 	Handler: jsii.String("hello.handler"),
+	// })
 
-	dynamotableviewer.NewTableViewer(stack, jsii.String("lggocdkViewHitCounter"), &dynamotableviewer.TableViewerProps{
-		Title: jsii.String("Hello Hits"),
-		Table: hitcounter.Table(),
-	})
+	// hitcounter := hitcounter.NewHitCounter(stack, "lggocdkHelloHitCounter", &hitcounter.HitCounterProps{
+	// 	Downstream: helloHandler,
+	// })
+
+	// awsapigateway.NewLambdaRestApi(stack, jsii.String("lggocdkEndpoint"), &awsapigateway.LambdaRestApiProps{
+	// 	// Handler: helloHandler,
+	// 	Handler: hitcounter.Handler(),
+	// })
+
+	// dynamotableviewer.NewTableViewer(stack, jsii.String("lggocdkViewHitCounter"), &dynamotableviewer.TableViewerProps{
+	// 	Title: jsii.String("Hello Hits"),
+	// 	Table: hitcounter.Table(),
+	// })
 
 	//  example 1
 	// queue := awssqs.NewQueue(stack, jsii.String("lggoCdkWorkshopQueue"), &awssqs.QueueProps{
