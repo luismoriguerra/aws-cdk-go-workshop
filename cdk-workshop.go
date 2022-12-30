@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
+	"github.com/cdklabs/cdk-dynamo-table-viewer-go/dynamotableviewer"
 )
 
 type CdkWorkshopStackProps struct {
@@ -34,6 +35,11 @@ func NewCdkWorkshopStack(scope constructs.Construct, id string, props *CdkWorksh
 	awsapigateway.NewLambdaRestApi(stack, jsii.String("lggocdkEndpoint"), &awsapigateway.LambdaRestApiProps{
 		// Handler: helloHandler,
 		Handler: hitcounter.Handler(),
+	})
+
+	dynamotableviewer.NewTableViewer(stack, jsii.String("lggocdkViewHitCounter"), &dynamotableviewer.TableViewerProps{
+		Title: jsii.String("Hello Hits"),
+		Table: hitcounter.Table(),
 	})
 
 	//  example 1
