@@ -1,10 +1,11 @@
 package main
 
 import (
+	"cdk-workshop/hitcounter"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssns"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssnssubscriptions"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awssqs"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
@@ -20,12 +21,28 @@ func NewCdkWorkshopStack(scope constructs.Construct, id string, props *CdkWorksh
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	queue := awssqs.NewQueue(stack, jsii.String("lggoCdkWorkshopQueue"), &awssqs.QueueProps{
-		VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
+	helloHandler := awslambda.NewFunction(stack, jsii.String("lggoHelloHandler"), &awslambda.FunctionProps{
+		Code:    awslambda.Code_FromAsset(jsii.String("lambda"), nil),
+		Runtime: awslambda.Runtime_NODEJS_16_X(),
+		Handler: jsii.String("hello.handler"),
 	})
 
-	topic := awssns.NewTopic(stack, jsii.String("lggoCdkWorkshopTopic"), &awssns.TopicProps{})
-	topic.AddSubscription(awssnssubscriptions.NewSqsSubscription(queue, &awssnssubscriptions.SqsSubscriptionProps{}))
+	hitcounter := hitcounter.NewHitCounter(stack, "lggocdkHelloHitCounter", &hitcounter.HitCounterProps{
+		Downstream: helloHandler,
+	})
+
+	awsapigateway.NewLambdaRestApi(stack, jsii.String("lggocdkEndpoint"), &awsapigateway.LambdaRestApiProps{
+		// Handler: helloHandler,
+		Handler: hitcounter.Handler(),
+	})
+
+	//  example 1
+	// queue := awssqs.NewQueue(stack, jsii.String("lggoCdkWorkshopQueue"), &awssqs.QueueProps{
+	// 	VisibilityTimeout: awscdk.Duration_Seconds(jsii.Number(300)),
+	// })
+
+	// topic := awssns.NewTopic(stack, jsii.String("lggoCdkWorkshopTopic"), &awssns.TopicProps{})
+	// topic.AddSubscription(awssnssubscriptions.NewSqsSubscription(queue, &awssnssubscriptions.SqsSubscriptionProps{}))
 
 	return stack
 }
